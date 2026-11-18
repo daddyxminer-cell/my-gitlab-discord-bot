@@ -1,0 +1,7 @@
+pearl-audit/
+
+# gitlab bot
+gitlab_bot/.env
+gitlab_bot/state/seen.json*
+gitlab_bot/state/bot.lock
+__pycache__/
