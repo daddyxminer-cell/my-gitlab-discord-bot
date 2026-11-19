@@ -59,7 +59,7 @@ jobs:
           STAGES: ${{ vars.STAGES || 'pre-testnet,testnet,mainnet' }}
           RECENT_DAYS: ${{ vars.RECENT_DAYS || '7' }}
           ACTIVE_STREAM: ${{ vars.ACTIVE_STREAM || 'true' }}
-          ACTIVE_MAX_PAGES: ${{ vars.ACTIVE_MAX_PAGES || '5' }}
+          ACTIVE_MAX_PAGES: ${{ vars.ACTIVE_MAX_PAGES || '15' }}
           SHOW_DETAILS: ${{ vars.SHOW_DETAILS || 'true' }}
           RUN_BUDGET_MINUTES: '30'
           WORKERS: '6'
