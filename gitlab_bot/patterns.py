@@ -210,7 +210,10 @@ POS_RE = r"proof[\s-]*of[\s-]*stake|\bpos\b|\bdpos\b|\bbft\b|\bproof[\s-]*of[\s-
 # --------------------------------------------------------------------------- #
 # Keyword polling of recently ACTIVE projects (old repositories that are updating now).
 # GitLab search matches name / path / description. Order matters only for logging.
-ACTIVE_KEYWORDS = ["testnet", "mainnet", "pre-testnet", "genesis", "pow", "randomx", "masternode", "validator"]
+ACTIVE_KEYWORDS = ["testnet", "mainnet", "pre-testnet", "devnet", "genesis", "pow",
+    "randomx", "kawpow", "ghostrider", "yespower", "yescrypt",
+    "ethash", "autolykos", "equihash", "fishhash", "karlsenhash", "progpow",
+    "masternode", "validator"]
 
 EV_PRETESTNET = re.compile(r"\bpre[\s-]?test[\s-]?net\b", re.I)
 EV_TESTNET = re.compile(r"\b(test[\s-]?net|dev[\s-]?net|incentivi[sz]ed|faucet)\b", re.I)
