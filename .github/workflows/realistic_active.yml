@@ -1,0 +1,198 @@
+name: Smart Green Activity
+
+# ملاحظة: كل الأوقات في cron بتوقيت UTC وليس بتوقيتك المحلي.
+# Lagos = UTC+1، فـ "20 7" تعني 08:20 صباحاً بتوقيتك.
+on:
+  schedule:
+    - cron: "20 7 * * *"
+    - cron: "45 12 * * *"
+    - cron: "10 18 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "تشغيل فوري بدون القرعة العشوائية (للاختبار)"
+        type: boolean
+        default: false
+      max_commits:
+        description: "الحد الأقصى لعدد الـ commits"
+        type: string
+        default: "3"
+
+# يمنع تشغيلين متزامنين — وهذا كان أهم سبب محتمل لفشل git push في النسخة الأصلية
+concurrency:
+  group: smart-green-activity
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  generate-activity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Smart Activity Generator
+        shell: bash
+        env:
+          # ====== بياناتك ======
+          GIT_EMAIL: "afdaddyxminer@gmail.com"
+          GIT_NAME: "daddyxminer-cell"
+          # =====================
+          LOCAL_TZ: "Africa/Lagos"
+          MAX_HARD: "8"
+          FORCE: ${{ inputs.force && 'true' || 'false' }}
+          MAX_COMMITS: ${{ inputs.max_commits || '8' }}
+        run: |
+          set -euo pipefail
+
+          # قيم افتراضية: يمنع فشل السكربت إن غاب أي متغير
+          GIT_EMAIL="${GIT_EMAIL:-afdaddyxminer@gmail.com}"
+          GIT_NAME="${GIT_NAME:-daddyxminer-cell}"
+          LOCAL_TZ="${LOCAL_TZ:-Africa/Lagos}"
+          MAX_HARD="${MAX_HARD:-8}"
+          FORCE="${FORCE:-false}"
+          MAX_COMMITS="${MAX_COMMITS:-8}"
+
+          git config --local user.email "$GIT_EMAIL"
+          git config --local user.name  "$GIT_NAME"
+          git config --local commit.gpgsign false
+
+          BRANCH="${GITHUB_REF_NAME:-main}"
+          rand() { echo $(( RANDOM % $1 )); }
+
+          # ---------- 1) قرارات التقويم بتوقيتك المحلي ----------
+          DOW=$(TZ="$LOCAL_TZ" date +%u)   # 1..7 (الأحد = 7)
+          MAX=$MAX_HARD
+
+          if [ "$FORCE" != "true" ]; then
+            if [ "$DOW" -ge 6 ]; then
+              MAX=3
+              if [ "$(rand 100)" -lt 30 ]; then
+                echo "::notice::يوم عطلة — تخطي هذه الدورة"
+                exit 0
+              fi
+            else
+              if [ "$(rand 100)" -lt 5 ]; then
+                echo "::notice::يوم راحة عشوائي — تخطي"
+                exit 0
+              fi
+            fi
+            if [ "$(rand 100)" -lt 30 ]; then
+              echo "::notice::تخطي هذه الفترة لكسر النمط"
+              exit 0
+            fi
+            if [ "$MAX" -gt "$MAX_COMMITS" ]; then MAX="$MAX_COMMITS"; fi
+          else
+            MAX="$MAX_COMMITS"
+          fi
+
+          # ---------- 2) عدد الـ commits هذه المرة ----------
+          ROLL=$(rand 100)
+          if [ "$ROLL" -lt 45 ]; then
+            ITERATIONS=$(( 1 + $(rand 2) ))
+          elif [ "$ROLL" -lt 80 ]; then
+            ITERATIONS=$(( 2 + $(rand 3) ))
+          else
+            ITERATIONS=$(( 4 + $(rand MAX) ))
+          fi
+          if [ "$ITERATIONS" -gt "$MAX" ]; then ITERATIONS=$MAX; fi
+          if [ "$ITERATIONS" -lt 1 ]; then ITERATIONS=1; fi
+
+          # ---------- 3) تأخير بسيط كسر النمط ----------
+          SLEEP_TIME=$(( $(rand 40) + 5 ))
+          echo "انتظار ${SLEEP_TIME} ثانية قبل البدء..."
+          sleep "$SLEEP_TIME"
+
+          echo "::notice::عدد الـ commits المخطط: $ITERATIONS"
+
+          MESSAGES=(
+            "Fix minor bug" "Update documentation" "Refactor code structure" "Add new feature"
+            "Improve performance" "Fix typo" "Update dependencies" "Clean up code"
+            "Add error handling" "Optimize function" "Update config" "Fix edge case"
+            "Improve readability" "Add tests" "Update changelog" "Fix formatting"
+            "Refactor logic" "Add validation" "Update structure" "Fix compatibility"
+          )
+          MSG_COUNT=${#MESSAGES[@]}
+
+          mkdir -p data docs src
+          # نُنشئ الملفات إن لم تكن موجودة (touch لا يمس المحتوى الحالي)
+          touch notes.md data/progress.json docs/updates.md src/config.txt activity.log
+
+          # ---------- 4) توليد التعديلات ----------
+          MADE=0
+          for i in $(seq 1 "$ITERATIONS"); do
+            TS=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+            # رمز فريد يمنع خطأ "nothing to commit" عند التكرار في نفس الثانية
+            TOKEN="$(date -u +%s)-$(rand 32767)$(rand 32767)"
+            MSG="${MESSAGES[$(rand $MSG_COUNT)]}"
+
+            case $(( RANDOM % 5 )) in
+              0)
+                printf '{"updated": "%s", "build": %d, "token": "%s"}\n' \
+                  "$TS" "$(( $(rand 9000) + 1000 ))" "$TOKEN" > data/progress.json
+                ;;
+              1)
+                { echo "# Updates"; echo "- $TS - entry $(( $(rand 500) )) [$TOKEN]"; } > docs/updates.md
+                ;;
+              2)
+                { echo "# Notes"; echo "Reviewed: $TS [$TOKEN]"; } > notes.md
+                ;;
+              3)
+                printf 'version=1.%d.%d\nupdated=%s\ntoken=%s\n' \
+                  "$(rand 50)" "$(rand 99)" "$TS" "$TOKEN" > src/config.txt
+                ;;
+              4)
+                # سجل دائري: نحتفظ بآخر 500 سطر فقط حتى لا يتضخم الملف إلى الأبد
+                printf '%s - log %d\n' "$TS" "$(rand 10000)" >> activity.log
+                tail -n 500 activity.log > activity.log.tmp && mv activity.log.tmp activity.log
+                ;;
+            esac
+
+            # نُجهّز فقط الملفات التي نعرفها، ولا نلمس أي تعديل آخر في المستودع
+            git reset -q
+            git add -- data docs src notes.md activity.log
+
+            if git diff --cached --quiet; then
+              echo "::warning::لا يوجد تغيير مُهيّأ في الدورة $i — تخطي"
+              continue
+            fi
+
+            git commit -q -m "$MSG"
+            MADE=$(( MADE + 1 ))
+            echo "commit $MADE: $MSG"
+            if [ "$i" -lt "$ITERATIONS" ]; then sleep $(( $(rand 3) + 1 )); fi
+          done
+
+          echo "::notice::تم إنشاء $MADE commit"
+
+          {
+            echo "### Smart Green Activity"
+            echo ""
+            echo "- اليوم (محلي): $(TZ="$LOCAL_TZ" date +%F)"
+            echo "- commits أُنشئت: **$MADE**"
+            echo "- الفرع: \`$BRANCH\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$MADE" -eq 0 ]; then
+            echo "::notice::لم يُنشأ أي commit — لا شيء للدفع"
+            exit 0
+          fi
+
+          # ---------- 5) دفع آمن مع إعادة المحاولة ----------
+          for attempt in 1 2 3; do
+            if git push origin "HEAD:$BRANCH"; then
+              echo "::notice::تم الدفع بنجاح (المحاولة $attempt)"
+              exit 0
+            fi
+            echo "::warning::رُفض الدفع (المحاولة $attempt) — إعادة التأسيس على origin/$BRANCH"
+            git pull --rebase --autostash origin "$BRANCH"
+            sleep $(( attempt * 3 ))
+          done
+
+          echo "::error::فشل الدفع بعد 3 محاولات"
+          exit 1
