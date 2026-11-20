@@ -102,7 +102,7 @@ NEG_PATTERNS = {
                       r"\blearning (project|purposes|exercise)\b|\beducational\b|\btoy\b|\bsimple blockchain\b|\bminimal blockchain\b|"
                       r"\bbasic blockchain\b|\bblockchain (demo|simulation|simulator|prototype|example)\b|\bsmall,? readable\b|\bexercise\b|"
                       r"\bbootcamp\b|\bblockchain (in|using|with) (python|javascript|js|java|go|golang|rust|c\+\+|c#|php|node(\.js)?|typescript)\b|"
-                      r"\b(build|building|create|creating|implement(ing)?) (a|your own|simple|my own) (simple )?blockchain\b|\bfrom scratch\b|\bproof of concept\b"),
+                      r"\b(build|building|create|creating|implement(ing)?) (a|your own|simple|my own) (simple )?blockchain\b|\bproof of concept\b"),
     "portfolio/other": r"\bportfolio\b|\bresume\b|\bcv\b|\bmy (personal )?website\b|\blanding page\b|\bproof[\s-]*of[\s-]*work (page|portfolio|repo(sitory)?)\b|\bstrategic proof of work\b|\bdaily (log|commits?)\b",
     "token/defi": r"\berc[\s-]*20\b|\bbep[\s-]*20\b|\bspl token\b|\bsolidity\b|\bhardhat\b|\bpresale\b|\bairdrop\b|\bmeme ?coin\b|\bpump\.?fun\b|\bnft\b|\bdefi\b|\buniswap\b|\bpancakeswap\b|\bsmart contracts? (for|on) (ethereum|bsc|solana)\b",
     "bot/tool": (r"\btrading bot\b|\btelegram bot\b|\bdiscord bot\b|\bprice (tracker|alert)\b|\bportfolio tracker\b|\bmining calculator\b|"
